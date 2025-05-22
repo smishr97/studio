@@ -38,10 +38,10 @@ body {
 
     --radius: 0.75rem; /* iOS like radius */
 
-    --chart-1: 10 80% 60%; /* Calories (Orangey-Red) */
-    --chart-2: 210 70% 55%; /* Protein (Blue) */
-    --chart-3: 50 80% 60%; /* Fats (Yellow/Gold) */
-    --chart-4: 300 60% 65%; /* Sugar (Purple/Magenta) */
+    --chart-1: 0 90% 60%;   /* Calories (Vibrant Red) */
+    --chart-2: 120 60% 45%;  /* Protein (Strong Green) */
+    --chart-3: 30 90% 55%;   /* Fats (Bright Orange) */
+    --chart-4: 260 60% 60%;  /* Sugar (Deep Indigo) */
     --chart-5: 27 87% 67%; /* Kept original for other potential charts */
     
     --sidebar-background: 0 0% 98%;
@@ -83,10 +83,10 @@ body {
     --input: 240 15% 22%;
     --ring: 174 37% 65%; /* Lighter teal for focus ring */
     
-    --chart-1: 10 70% 55%;   /* Calories (Orangey-Red, adapted for dark) */
-    --chart-2: 210 70% 65%;  /* Protein (Blue, adapted for dark) */
-    --chart-3: 50 70% 60%;   /* Fats (Yellow/Gold, adapted for dark) */
-    --chart-4: 300 60% 70%;  /* Sugar (Purple/Magenta, adapted for dark) */
+    --chart-1: 0 80% 65%;   /* Calories (Vibrant Red, adapted for dark) */
+    --chart-2: 120 60% 55%;  /* Protein (Strong Green, adapted for dark) */
+    --chart-3: 30 90% 60%;   /* Fats (Bright Orange, adapted for dark) */
+    --chart-4: 260 70% 70%;  /* Sugar (Deep Indigo, adapted for dark) */
     --chart-5: 340 75% 55%; /* Kept original for other potential charts */
 
     --sidebar-background: 240 5.9% 10%;
