@@ -17,8 +17,8 @@ body {
     --popover: 240 100% 98%; 
     --popover-foreground: 240 10% 20%;
 
-    --primary: 240 67% 94%; /* Light lavender #E6E6FA */
-    --primary-foreground: 240 25% 30%; /* Darker lavender text */
+    --primary: 174 37% 55%; /* Muted Teal #63B7AF */
+    --primary-foreground: 174 20% 15%; /* Darker teal text for on primary */
 
     --secondary: 240 60% 96%; /* Lighter lavender */
     --secondary-foreground: 240 25% 30%;
@@ -34,7 +34,7 @@ body {
 
     --border: 240 30% 90%; 
     --input: 240 30% 95%; 
-    --ring: 90 60% 75%; /* Muted green for focus rings */
+    --ring: 174 37% 45%; /* Darker teal for focus rings */
 
     --radius: 0.75rem; /* iOS like radius */
 
@@ -64,8 +64,8 @@ body {
     --popover: 240 10% 10%;
     --popover-foreground: 240 10% 95%;
 
-    --primary: 240 50% 60%; /* Darker Lavender */
-    --primary-foreground: 240 10% 95%;
+    --primary: 174 37% 55%; /* Muted Teal #63B7AF */
+    --primary-foreground: 174 20% 15%; /* Darker teal text for on primary */
 
     --secondary: 240 20% 25%;
     --secondary-foreground: 240 10% 95%;
@@ -81,7 +81,7 @@ body {
 
     --border: 240 15% 25%;
     --input: 240 15% 22%;
-    --ring: 90 50% 50%; /* Darker Muted Green for ring */
+    --ring: 174 37% 65%; /* Lighter teal for focus ring */
     
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
