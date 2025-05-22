@@ -20,8 +20,9 @@ export default function DashboardPage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
+    // Initialize selectedDate on the client-side to avoid hydration mismatch
     setSelectedDate(new Date());
-    setClientReady(true);
+    setClientReady(true); // Mark client as ready once date is set
   }, []);
 
   const handleDateChange = (date: Date | undefined) => {
@@ -37,10 +38,14 @@ export default function DashboardPage() {
       if (index > -1) {
         const updatedMeals = [...prevMeals];
         updatedMeals[index] = mealToUpdate;
-        toast({ title: "Meal Updated", description: `${mealToUpdate.name} for ${mealToUpdate.type} has been updated.` });
+        setTimeout(() => {
+          toast({ title: "Meal Updated", description: `${mealToUpdate.name} for ${mealToUpdate.type} has been updated.` });
+        }, 0);
         return updatedMeals;
       }
-      toast({ title: "Meal Added", description: `${mealToUpdate.name} for ${mealToUpdate.type} has been added.` });
+      setTimeout(() => {
+        toast({ title: "Meal Added", description: `${mealToUpdate.name} for ${mealToUpdate.type} has been added.` });
+      }, 0);
       return [...prevMeals, mealToUpdate];
     });
   };
@@ -48,14 +53,17 @@ export default function DashboardPage() {
   const handleDeleteMeal = (mealIdToDelete: string) => {
     setAllMeals((prevMeals) => {
       const mealToDelete = prevMeals.find(m => m.id === mealIdToDelete);
+      const updatedMeals = prevMeals.filter((meal) => meal.id !== mealIdToDelete);
       if (mealToDelete) {
-        toast({ 
-          title: "Meal Deleted", 
-          description: `${mealToDelete.name} for ${mealToDelete.type} has been deleted.`,
-          variant: "destructive" 
-        });
+        setTimeout(() => {
+          toast({
+            title: "Meal Deleted",
+            description: `${mealToDelete.name} for ${mealToDelete.type} has been deleted.`,
+            variant: "destructive"
+          });
+        }, 0);
       }
-      return prevMeals.filter((meal) => meal.id !== mealIdToDelete);
+      return updatedMeals;
     });
   };
   
