@@ -9,21 +9,26 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [allMeals, setAllMeals] = useLocalStorage<MealEntry[]>("nutrijournal-meals", []);
   const { toast } = useToast();
-
-  // This state ensures DailyView re-renders when meals for the selectedDate change.
   const [mealsForSelectedDate, setMealsForSelectedDate] = useState<MealEntry[]>([]);
+  const [clientReady, setClientReady] = useState(false);
 
   useEffect(() => {
-    if (selectedDate) {
+    // This effect runs once on the client after hydration
+    setSelectedDate(new Date());
+    setClientReady(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
+  useEffect(() => {
+    if (selectedDate && clientReady) {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
       setMealsForSelectedDate(allMeals.filter(meal => meal.date === formattedDate));
     } else {
       setMealsForSelectedDate([]);
     }
-  }, [selectedDate, allMeals]);
+  }, [selectedDate, allMeals, clientReady]);
 
 
   const handleUpdateMeal = (mealToUpdate: MealEntry) => {
@@ -54,12 +59,12 @@ export default function DashboardPage() {
     });
   };
   
-  // Ensure selectedDate is always defined for DailyView after initial load
-  if (!selectedDate) {
-     // You can show a loading state or default to today if selectedDate is somehow undefined client-side initially
+  if (!clientReady || !selectedDate) {
+    // Render a placeholder on the server and during initial client render
+    // The actual content will render after client-side effects run.
     return (
       <div className="container mx-auto p-4 md:p-8 text-center">
-        <p>Loading calendar...</p>
+        <p>Loading NutriJournal...</p>
       </div>
     );
   }
