@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,20 +38,68 @@ import { PlusCircle, Edit3 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
+// Updated formSchema with z.preprocess for optional number fields
 const formSchema = z.object({
   name: z.string().min(2, { message: "Meal name must be at least 2 characters." }),
   category: z.enum(mealCategories),
   notes: z.string().optional(),
   sideDishes: z.string().optional(),
-  prepTime: z.coerce.number().int().min(0).optional(),
-  cookTime: z.coerce.number().int().min(0).optional(),
-  calories: z.coerce.number().min(0).optional(),
-  protein: z.coerce.number().min(0).optional(),
-  fats: z.coerce.number().min(0).optional(),
-  sugar: z.coerce.number().min(0).optional(),
+  prepTime: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({ invalid_type_error: "Prep time must be a number" }).int().min(0).optional()
+  ),
+  cookTime: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({ invalid_type_error: "Cook time must be a number" }).int().min(0).optional()
+  ),
+  calories: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({ invalid_type_error: "Calories must be a number" }).min(0).optional()
+  ),
+  protein: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({ invalid_type_error: "Protein must be a number" }).min(0).optional()
+  ),
+  fats: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({ invalid_type_error: "Fats must be a number" }).min(0).optional()
+  ),
+  sugar: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({ invalid_type_error: "Sugar must be a number" }).min(0).optional()
+  ),
 });
 
-type MealFormValues = z.infer<typeof formSchema>;
+type MealFormValues = z.infer<typeof formSchema>; // Values after Zod parsing (numbers are numbers or undefined)
+
+// Type for the raw form input values (numbers are strings for input elements)
+type MealFormInputValues = {
+  name: string;
+  category: MealCategory;
+  notes: string;
+  sideDishes: string;
+  prepTime: string;
+  cookTime: string;
+  calories: string;
+  protein: string;
+  fats: string;
+  sugar: string;
+};
+
+// Function to generate initial/default string-based values for the form
+const getInitialFormInputValues = (meal?: MealEntry): MealFormInputValues => ({
+  name: meal?.name || "",
+  category: meal?.category || "General",
+  notes: meal?.notes || "",
+  sideDishes: meal?.sideDishes || "",
+  prepTime: meal?.prepTime !== undefined && meal.prepTime !== null ? String(meal.prepTime) : "",
+  cookTime: meal?.cookTime !== undefined && meal.cookTime !== null ? String(meal.cookTime) : "",
+  calories: meal?.calories !== undefined && meal.calories !== null ? String(meal.calories) : "",
+  protein: meal?.protein !== undefined && meal.protein !== null ? String(meal.protein) : "",
+  fats: meal?.fats !== undefined && meal.fats !== null ? String(meal.fats) : "",
+  sugar: meal?.sugar !== undefined && meal.sugar !== null ? String(meal.sugar) : "",
+});
+
 
 interface MealFormDialogProps {
   mealType: MealType;
@@ -69,39 +118,23 @@ export function MealFormDialog({
 }: MealFormDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const form = useForm<MealFormValues>({
+  const form = useForm<MealFormValues>({ // Zod-parsed values type
     resolver: zodResolver(formSchema),
-    defaultValues: existingMeal
-      ? {
-          name: existingMeal.name,
-          category: existingMeal.category,
-          notes: existingMeal.notes || "",
-          sideDishes: existingMeal.sideDishes || "",
-          prepTime: existingMeal.prepTime || undefined,
-          cookTime: existingMeal.cookTime || undefined,
-          calories: existingMeal.calories || undefined,
-          protein: existingMeal.protein || undefined,
-          fats: existingMeal.fats || undefined,
-          sugar: existingMeal.sugar || undefined,
-        }
-      : {
-          name: "",
-          category: "General",
-          notes: "",
-          sideDishes: "",
-        },
+    // Provide string-based default values for the form inputs
+    defaultValues: getInitialFormInputValues(existingMeal) as unknown as MealFormValues,
   });
 
-  function onSubmit(values: MealFormValues) {
+  function onSubmit(values: MealFormValues) { // 'values' are Zod-parsed here
     const mealEntry: MealEntry = {
       id: existingMeal?.id || crypto.randomUUID(),
       date: selectedDate,
       type: mealType,
-      ...values,
+      ...values, // Spread the Zod-parsed values
     };
     onSave(mealEntry);
     setIsOpen(false);
-    form.reset( existingMeal ? values : { name: "", category: "General", notes: "", sideDishes: "" }); // Reset form after submission
+    // Reset with string-based values, using the potentially updated mealEntry if editing
+    form.reset(getInitialFormInputValues(existingMeal ? mealEntry : undefined)); 
   }
 
   const defaultTrigger = existingMeal ? (
@@ -115,7 +148,12 @@ export function MealFormDialog({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open) { // Reset form if dialog is closed without saving
+        form.reset(getInitialFormInputValues(existingMeal));
+      }
+    }}>
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
       <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -171,7 +209,8 @@ export function MealFormDialog({
                   <FormItem>
                     <FormLabel>Calories (kcal)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 350" {...field} />
+                      {/* field.value will be a string here, e.g., "" or "350" */}
+                      <Input type="number" placeholder="e.g., 350" {...field} onChange={(e) => field.onChange(e.target.value)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -184,7 +223,7 @@ export function MealFormDialog({
                   <FormItem>
                     <FormLabel>Protein (g)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 30" {...field} />
+                      <Input type="number" placeholder="e.g., 30" {...field} onChange={(e) => field.onChange(e.target.value)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -226,7 +265,7 @@ export function MealFormDialog({
                   <FormItem>
                     <FormLabel>Prep Time (min)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 10" {...field} />
+                      <Input type="number" placeholder="e.g., 10" {...field} onChange={(e) => field.onChange(e.target.value)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -239,7 +278,7 @@ export function MealFormDialog({
                   <FormItem>
                     <FormLabel>Cook Time (min)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 20" {...field} />
+                      <Input type="number" placeholder="e.g., 20" {...field} onChange={(e) => field.onChange(e.target.value)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -252,7 +291,7 @@ export function MealFormDialog({
                   <FormItem>
                     <FormLabel>Fats (g)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 15" {...field} />
+                      <Input type="number" placeholder="e.g., 15" {...field} onChange={(e) => field.onChange(e.target.value)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -265,7 +304,7 @@ export function MealFormDialog({
                   <FormItem>
                     <FormLabel>Sugar (g)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 5" {...field} />
+                      <Input type="number" placeholder="e.g., 5" {...field} onChange={(e) => field.onChange(e.target.value)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -274,7 +313,10 @@ export function MealFormDialog({
             </div>
             <DialogFooter className="pt-4">
               <DialogClose asChild>
-                <Button type="button" variant="outline">
+                <Button type="button" variant="outline" onClick={() => {
+                    form.reset(getInitialFormInputValues(existingMeal)); // Reset on cancel
+                    setIsOpen(false);
+                }}>
                   Cancel
                 </Button>
               </DialogClose>
@@ -288,3 +330,4 @@ export function MealFormDialog({
     </Dialog>
   );
 }
+
