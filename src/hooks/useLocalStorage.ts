@@ -1,41 +1,50 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 
 function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
-  const [storedValue, setStoredValue] = useState<T>(initialValue);
-
-  useEffect(() => {
-    // This effect runs only on the client, after hydration
-    let valueFromStorage: T;
+  // Initialize state.
+  // Read from localStorage only on the client and only once for initialization.
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    // Check if running on the client
+    if (typeof window === 'undefined') {
+      return initialValue; // For SSR or server environments
+    }
     try {
       const item = window.localStorage.getItem(key);
-      valueFromStorage = item ? JSON.parse(item) : initialValue;
+      // Parse stored json or if none return initialValue
+      return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
-      valueFromStorage = initialValue;
+      console.error(`Error reading localStorage key "${key}" during initialization:`, error);
+      return initialValue; // Fallback to initialValue on error
     }
-    setStoredValue(valueFromStorage);
+  });
 
-    // If initialValue was used because nothing was in storage, set it.
-    if (typeof window !== 'undefined' && !window.localStorage.getItem(key)) {
-        window.localStorage.setItem(key, JSON.stringify(initialValue));
+  // Persist to localStorage.
+  // This effect runs after every render where `key` or `storedValue` has changed.
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return; // Don't run on server
     }
-  }, [key, initialValue]);
+    try {
+      // When storedValue is the initialValue and localStorage doesn't have the key yet,
+      // this will write the initialValue to localStorage.
+      // If storedValue changes due to setValue, this will write the new value.
+      window.localStorage.setItem(key, JSON.stringify(storedValue));
+    } catch (error) {
+      console.error(`Error setting localStorage key "${key}":`, error);
+    }
+  }, [key, storedValue]); // Dependencies: re-run if key or the value itself changes.
 
+  // Define the setter function.
+  // Use useCallback to ensure the setter function has a stable identity.
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {
-      try {
-        const valueToStore = value instanceof Function ? value(storedValue) : value;
-        setStoredValue(valueToStore);
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(key, JSON.stringify(valueToStore));
-        }
-      } catch (error) {
-        console.error(`Error setting localStorage key "${key}":`, error);
-      }
+      // `setStoredValue` from useState can take a value or a function that receives the previous state.
+      setStoredValue(value);
     },
-    [key, storedValue]
+    [] // Empty dependency array makes `setValue` stable across re-renders.
   );
 
   return [storedValue, setValue];
