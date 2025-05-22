@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,29 +8,28 @@ import type { MealEntry } from "@/lib/types";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarIcon } from "lucide-react"; // Renamed to avoid conflict with Calendar component
 
 export default function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [allMeals, setAllMeals] = useLocalStorage<MealEntry[]>("nutrijournal-meals", []);
   const { toast } = useToast();
-  const [mealsForSelectedDate, setMealsForSelectedDate] = useState<MealEntry[]>([]);
   const [clientReady, setClientReady] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
-    // This effect runs once on the client after hydration
     setSelectedDate(new Date());
     setClientReady(true);
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, []);
 
-  useEffect(() => {
-    if (selectedDate && clientReady) {
-      const formattedDate = format(selectedDate, "yyyy-MM-dd");
-      setMealsForSelectedDate(allMeals.filter(meal => meal.date === formattedDate));
-    } else {
-      setMealsForSelectedDate([]);
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
+    if (date) {
+      setIsCalendarOpen(false);
     }
-  }, [selectedDate, allMeals, clientReady]);
-
+  };
 
   const handleUpdateMeal = (mealToUpdate: MealEntry) => {
     setAllMeals((prevMeals) => {
@@ -60,8 +60,6 @@ export default function DashboardPage() {
   };
   
   if (!clientReady || !selectedDate) {
-    // Render a placeholder on the server and during initial client render
-    // The actual content will render after client-side effects run.
     return (
       <div className="container mx-auto p-4 md:p-8 text-center">
         <p>Loading NutriJournal...</p>
@@ -71,19 +69,40 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <div className="flex flex-col lg:flex-row gap-8">
-        <aside className="lg:w-[380px] lg:sticky lg:top-20 self-start"> {/* Adjusted width for calendar */}
-          <CalendarView selectedDate={selectedDate} onDateChange={setSelectedDate} />
-        </aside>
-        <main className="flex-1 min-w-0"> {/* Added min-w-0 for flex child overflow */}
-          <DailyView 
-            selectedDate={selectedDate} 
-            meals={allMeals} // Pass allMeals, DailyView will filter
-            onUpdateMeal={handleUpdateMeal}
-            onDeleteMeal={handleDeleteMeal}
-          />
-        </main>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {format(selectedDate, "EEEE")}
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            {format(selectedDate, "MMMM d, yyyy")}
+          </p>
+        </div>
+        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto justify-center">
+              <CalendarIcon className="h-5 w-5" />
+              <span>{format(selectedDate, "MMM d, yyyy")}</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <CalendarView
+              selectedDate={selectedDate}
+              onDateChange={handleDateChange}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
+
+      <main className="flex-1 min-w-0">
+        <DailyView 
+          selectedDate={selectedDate} 
+          meals={allMeals}
+          onUpdateMeal={handleUpdateMeal}
+          onDeleteMeal={handleDeleteMeal}
+        />
+      </main>
     </div>
   );
 }
